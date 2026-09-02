@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prompt Smithy — AI Prompt Generator</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #1C1B1A;
+    color: #F2EEE4;
+    font-family: 'Courier New', 'Courier Prime', monospace;
+    display: flex;
+    justify-content: center;
+  }
+  .wrap { width: 100%; max-width: 720px; padding: 36px 20px 60px; }
+  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .header svg { color: #C9A227; }
+  h1 { font-size: 1.9rem; margin: 0; font-weight: 700; letter-spacing: -0.01em; }
+  .subtitle { color: #8F897C; margin: 0 0 32px; font-size: 0.95rem; line-height: 1.5; }
+  .categories { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .cat-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-radius: 2px;
+    border: 1px solid #3A3733; background: transparent; color: #B8B2A4;
+    font-family: inherit; font-size: 0.82rem; cursor: pointer;
+  }
+  .cat-btn.active { border-color: #C9A227; background: rgba(201,162,39,0.12); color: #E8C766; }
+  .panel {
+    background: #F7F3EA; color: #1C1B1A; border-radius: 3px;
+    padding: 22px 22px 18px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35);
+    margin-bottom: 22px;
+  }
+  .label { display: block; font-size: 0.72rem; color: #6B6459; margin-bottom: 8px; letter-spacing: 0.02em; }
+  textarea {
+    width: 100%; resize: vertical; border: none; outline: none;
+    background: transparent; font-family: inherit; font-size: 1rem; color: #1C1B1A; line-height: 1.5;
+  }
+  .divider { height: 1px; background: #D9D2C1; margin: 10px 0 16px; }
+  .generate-btn {
+    display: flex; align-items: center; gap: 8px; padding: 11px 18px;
+    background: #1C1B1A; color: #F2EEE4; border: none; border-radius: 2px;
+    font-family: inherit; font-size: 0.88rem; cursor: pointer;
+  }
+  .generate-btn:disabled { background: #B8B2A4; cursor: default; }
+  .upload-zone {
+    display: flex; align-items: center; gap: 8px; padding: 14px 16px; width: 100%;
+    border: 1px dashed #B8AF98; border-radius: 2px; background: transparent;
+    color: #6B6459; font-family: inherit; font-size: 0.85rem; cursor: pointer; margin-bottom: 14px;
+  }
+  .preview-wrap { position: relative; display: inline-block; margin-bottom: 14px; }
+  .preview-wrap img { max-height: 160px; border-radius: 2px; display: block; }
+  .remove-btn {
+    position: absolute; top: 6px; right: 6px; background: #1C1B1A; color: #F2EEE4;
+    border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer;
+  }
+  .error { color: #E08585; font-size: 0.85rem; margin-bottom: 16px; }
+  .result-box { border: 1px solid #3A3733; border-radius: 3px; padding: 20px 20px 16px; background: rgba(255,255,255,0.02); }
+  .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .result-label { display: flex; align-items: center; gap: 8px; color: #8F897C; font-size: 0.72rem; }
+  .copy-btn {
+    display: flex; align-items: center; gap: 6px; background: transparent;
+    border: 1px solid #3A3733; color: #B8B2A4; border-radius: 2px; padding: 6px 10px;
+    font-family: inherit; font-size: 0.72rem; cursor: pointer;
+  }
+  .copy-btn.copied { color: #8FC97A; }
+  .result-text { margin: 0; font-size: 0.95rem; line-height: 1.65; white-space: pre-wrap; }
+  #fileInput { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14.5 3.5l6 6L9 21H3v-6z"/></svg>
+    <h1>Prompt Smithy</h1>
+  </div>
+  <p class="subtitle">Give your idea and get a polished, ready-to-use AI prompt.</p>
+
+  <div class="categories" id="categories"></div>
+
+  <div class="panel">
+    <label class="label" id="ideaLabel">Your idea</label>
+
+    <div id="uploadArea" style="display:none;">
+      <input type="file" id="fileInput" accept="image/*" />
+      <button class="upload-zone" id="chooseBtn">📎 Choose photo</button>
+      <div class="preview-wrap" id="previewWrap" style="display:none;">
+        <img id="previewImg" src="" alt="preview" />
+        <button class="remove-btn" id="removeBtn">✕</button>
+      </div>
+    </div>
+
+    <textarea id="ideaInput" rows="4" placeholder="e.g. a cold healing experience at a sea beach..."></textarea>
+    <div class="divider"></div>
+    <button class="generate-btn" id="generateBtn">✨ Generate Prompt</button>
+  </div>
+
+  <div class="error" id="errorBox" style="display:none;"></div>
+
+  <div class="result-box" id="resultBox" style="display:none;">
+    <div class="result-header">
+      <div class="result-label">Generated Prompt</div>
+      <button class="copy-btn" id="copyBtn">Copy</button>
+    </div>
+    <p class="result-text" id="resultText"></p>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = [
+  { id: "image", label: "Image (Midjourney/DALL-E)" },
+  { id: "video", label: "Video (Sora/Runway/Veo)" },
+  { id: "master", label: "Master Prompt", isMaster: true },
+  { id: "photo", label: "From Photo (Upload)", isPhoto: true },
+];
+
+let activeCategory = CATEGORIES[0];
+let imageData = null; // { base64, mediaType, previewUrl }
+
+const categoriesEl = document.getElementById("categories");
+const ideaLabel = document.getElementById("ideaLabel");
+const uploadArea = document.getElementById("uploadArea");
+const chooseBtn = document.getElementById("chooseBtn");
+const fileInput = document.getElementById("fileInput");
+const previewWrap = document.getElementById("previewWrap");
+const previewImg = document.getElementById("previewImg");
+const removeBtn = document.getElementById("removeBtn");
+const ideaInput = document.getElementById("ideaInput");
+const generateBtn = document.getElementById("generateBtn");
+const errorBox = document.getElementById("errorBox");
+const resultBox = document.getElementById("resultBox");
+const resultText = document.getElementById("resultText");
+const copyBtn = document.getElementById("copyBtn");
+
+function renderCategories() {
+  categoriesEl.innerHTML = "";
+  CATEGORIES.forEach((c) => {
+    const btn = document.createElement("button");
+    btn.className = "cat-btn" + (c.id === activeCategory.id ? " active" : "");
+    btn.textContent = c.label;
+    btn.onclick = () => { activeCategory = c; onCategoryChange(); };
+    categoriesEl.appendChild(btn);
+  });
+}
+
+function onCategoryChange() {
+  renderCategories();
+  ideaLabel.textContent = activeCategory.isPhoto ? "Photo" : "Your idea";
+  uploadArea.style.display = activeCategory.isPhoto ? "block" : "none";
+  ideaInput.rows = activeCategory.isPhoto ? 2 : 4;
+  ideaInput.placeholder = activeCategory.isPhoto
+    ? "Optional: any special instructions..."
+    : activeCategory.isMaster
+    ? "e.g. a recurring series of 10s ASMR soap-cutting videos..."
+    : "e.g. a cold healing experience at a sea beach...";
+  updateButtonState();
+}
+
+function updateButtonState() {
+  const disabled = activeCategory.isPhoto ? !imageData : !ideaInput.value.trim();
+  generateBtn.disabled = disabled;
+}
+
+chooseBtn.onclick = () => fileInput.click();
+fileInput.onchange = (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const result = reader.result;
+    const [meta, base64] = result.split(",");
+    const mediaType = meta.match(/data:(.*);base64/)[1];
+    imageData = { base64, mediaType, previewUrl: result };
+    previewImg.src = result;
+    previewWrap.style.display = "inline-block";
+    chooseBtn.style.display = "none";
+    updateButtonState();
+  };
+  reader.readAsDataURL(file);
+};
+removeBtn.onclick = () => {
+  imageData = null;
+  previewWrap.style.display = "none";
+  chooseBtn.style.display = "flex";
+  fileInput.value = "";
+  updateButtonState();
+};
+ideaInput.oninput = updateButtonState;
+
+generateBtn.onclick = async () => {
+  errorBox.style.display = "none";
+  resultBox.style.display = "none";
+  generateBtn.disabled = true;
+  generateBtn.textContent = "Generating...";
+  try {
+    const payload = {
+      category: activeCategory.id,
+      idea: ideaInput.value.trim(),
+    };
+    if (activeCategory.isPhoto && imageData) {
+      payload.image = { base64: imageData.base64, mediaType: imageData.mediaType };
+    }
+    const res = await fetch("/.netlify/functions/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.text) throw new Error(data.error || "empty");
+    resultText.textContent = data.text;
+    resultBox.style.display = "block";
+  } catch (e) {
+    errorBox.textContent = "Sorry, couldn't generate the prompt. Please try again.";
+    errorBox.style.display = "block";
+  } finally {
+    generateBtn.textContent = "✨ Generate Prompt";
+    updateButtonState();
+  }
+};
+
+copyBtn.onclick = () => {
+  navigator.clipboard.writeText(resultText.textContent).then(() => {
+    copyBtn.textContent = "Copied";
+    copyBtn.classList.add("copied");
+    setTimeout(() => {
+      copyBtn.textContent = "Copy";
+      copyBtn.classList.remove("copied");
+    }, 1800);
+  });
+};
+
+renderCategories();
+onCategoryChange();
+</script>
+</body>
+</html>
